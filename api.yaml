@@ -64,12 +64,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScanNotifications'
-        400:
-          description: "Invalid input"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
       x-transportd:
         backend: app
         enabled:
@@ -83,10 +77,7 @@ paths:
           async: false
           request: '#! json .Request.Body !#'
           success: '{"status": 200, "bodyPassthrough": true}'
-          error: '{"status":
-            #! if eq .Response.Body.errorType "InvalidInput" !# 400
-            #! else !# 500
-            #! end !#, "bodyPassthrough": true}'
+          error: '{"status": 500, "bodyPassthrough": true}'
 components:
   schemas:
     ScanNotification:

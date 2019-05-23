@@ -1,11 +1,5 @@
 package logs
 
-// InvalidInput is logged when the provided input is malformed.
-type InvalidInput struct {
-	Message string `logevent:"message,default=invalid-input"`
-	Reason  string `logevent:"reason"`
-}
-
 // ScanFetcherFailure is logged when there is a failure with the scan fetcher dependency.
 type ScanFetcherFailure struct {
 	Message string `logevent:"message,default=scan-fetcher-error"`
