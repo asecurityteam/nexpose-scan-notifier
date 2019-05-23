@@ -56,12 +56,7 @@ paths:
         backend: app
   /notification:
     post:
-      description: Poll Nexpose for scans completed within the provided duration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationRequest'
+      description: Poll Nexpose for scans completed since the last invocation of this endpoint.
       responses:
         200:
           description: "Success"
@@ -84,7 +79,7 @@ paths:
           - "responsevalidation"
           - "lambda"
         lambda:
-          arn: "fetchScan"
+          arn: "notification"
           async: false
           request: '#! json .Request.Body !#'
           success: '{"status": 200, "bodyPassthrough": true}'
@@ -94,24 +89,15 @@ paths:
             #! end !#, "bodyPassthrough": true}'
 components:
   schemas:
-    NotificationRequest:
-      type: object
-      required:
-        - duration
-      properties:
-        duration:
-          type: string
-          description: The duration prior to the present moment to query for completed scans.
-          example: 30s
     ScanNotification:
       type: object
       required:
-        - site_id
+        - siteID
       properties:
-        scan_id:
+        scanID:
           type: string
           description: The Nexpose scan ID for the completed scan.
-        site_id:
+        siteID:
           type: string
           description: The Nexpose site ID for the site that just got scanned.
     ScanNotifications:
