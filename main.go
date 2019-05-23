@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
+	v1 "github.com/asecurityteam/nexpose-scan-notifier/pkg/handlers/v1"
 	"github.com/asecurityteam/serverfull"
 	"github.com/asecurityteam/settings"
 )
@@ -15,9 +17,15 @@ func main() {
 		panic(err.Error())
 	}
 
+	notificationHandler := &v1.NotificationHandler{
+		// TODO: implement domain.ScanFetcher interface
+		// TODO: implement domain.TimestampFetcher interface
+		// TODO: implement domain.TimestampStorer interface
+		// TODO: implement domain.Producer interface
+		LogFn: domain.LoggerFromContext,
+	}
 	handlers := map[string]serverfull.Function{
-		// TODO: Register lambda functions here in the form of
-		// "name_or_arn": lambda.NewHandler(myHandler.Handle)
+		"notification": serverfull.NewFunction(notificationHandler),
 	}
 
 	fetcher := &serverfull.StaticFetcher{Functions: handlers}

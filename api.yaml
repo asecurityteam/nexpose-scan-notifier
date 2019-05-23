@@ -56,12 +56,7 @@ paths:
         backend: app
   /notification:
     post:
-      description: Poll Nexpose for scans completed within the provided duration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationRequest'
+      description: Poll Nexpose for scans completed since the last known successfully processed scan timestamp.
       responses:
         200:
           description: "Success"
@@ -69,12 +64,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScanNotifications'
-        400:
-          description: "Invalid input"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
       x-transportd:
         backend: app
         enabled:
@@ -84,34 +73,22 @@ paths:
           - "responsevalidation"
           - "lambda"
         lambda:
-          arn: "fetchScan"
+          arn: "notification"
           async: false
           request: '#! json .Request.Body !#'
           success: '{"status": 200, "bodyPassthrough": true}'
-          error: '{"status":
-            #! if eq .Response.Body.errorType "InvalidInput" !# 400
-            #! else !# 500
-            #! end !#, "bodyPassthrough": true}'
+          error: '{"status": 500, "bodyPassthrough": true}'
 components:
   schemas:
-    NotificationRequest:
-      type: object
-      required:
-        - duration
-      properties:
-        duration:
-          type: string
-          description: The duration prior to the present moment to query for completed scans.
-          example: 30s
     ScanNotification:
       type: object
       required:
-        - site_id
+        - siteID
       properties:
-        scan_id:
+        scanID:
           type: string
           description: The Nexpose scan ID for the completed scan.
-        site_id:
+        siteID:
           type: string
           description: The Nexpose site ID for the site that just got scanned.
     ScanNotifications:
