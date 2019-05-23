@@ -27,8 +27,8 @@ type NotificationHandler struct {
 	LogFn            domain.LogFn
 }
 
-// Handle accepts takes Input with a duration, queries for completed scans within the duration,
-// produces all completed scans to a queue, and returns the list of completed scans.
+// Handle queries for completed scans since the last invocation, produces all
+// completed scans to a queue, and returns the list of completed scans.
 func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 	logger := h.LogFn(ctx)
 
