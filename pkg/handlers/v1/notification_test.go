@@ -15,13 +15,13 @@ import (
 func TestCompletedScanToscanNotification(t *testing.T) {
 	scanID := "1"
 	siteID := "1"
-	scanNotification := completedScanToScanNotification(domain.CompletedScan{
+	scan := completedScanToScanNotification(domain.CompletedScan{
 		SiteID:    siteID,
 		ScanID:    scanID,
 		Timestamp: time.Now(),
 	})
-	require.Equal(t, scanID, scanNotification.ScanID)
-	require.Equal(t, siteID, scanNotification.SiteID)
+	require.Equal(t, scanID, scan.ScanID)
+	require.Equal(t, siteID, scan.SiteID)
 }
 
 func TestHandleFetchTimestamp(t *testing.T) {
