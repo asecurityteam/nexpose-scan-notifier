@@ -24,7 +24,7 @@ func TestCompletedScanToscanNotification(t *testing.T) {
 	require.Equal(t, siteID, scan.SiteID)
 }
 
-func TestHandleFetchTimestamp(t *testing.T) {
+func TestHandle(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -187,6 +187,169 @@ func TestHandleFetchTimestamp(t *testing.T) {
 			output, err := handler.Handle(context.Background())
 			require.Equal(t, tt.Output, output)
 			require.Equal(t, tt.Err, err)
+		})
+	}
+}
+
+func TestHandleSortOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ts := time.Now().Add(-1 * time.Hour)
+	tc := []struct {
+		Name      string
+		Timestamp time.Time
+		Scans     []domain.CompletedScan
+		Output    Output
+	}{
+		{
+			Name:      "scans fetched in order",
+			Timestamp: ts,
+			Scans: []domain.CompletedScan{
+				{
+					ScanID:    "1",
+					SiteID:    "1",
+					Timestamp: ts.Add(1 * time.Second),
+				},
+				{
+					ScanID:    "2",
+					SiteID:    "2",
+					Timestamp: ts.Add(2 * time.Second),
+				},
+			},
+			Output: Output{
+				Response: []scanNotification{
+					{
+						ScanID: "1",
+						SiteID: "1",
+					},
+					{
+						ScanID: "2",
+						SiteID: "2",
+					},
+				},
+			},
+		},
+		{
+			Name:      "scans fetched out of order",
+			Timestamp: ts,
+			Scans: []domain.CompletedScan{
+				{
+					ScanID:    "4",
+					SiteID:    "4",
+					Timestamp: ts.Add(4 * time.Second),
+				},
+				{
+					ScanID:    "1",
+					SiteID:    "1",
+					Timestamp: ts.Add(1 * time.Second),
+				},
+				{
+					ScanID:    "3",
+					SiteID:    "3",
+					Timestamp: ts.Add(3 * time.Second),
+				},
+				{
+					ScanID:    "2",
+					SiteID:    "2",
+					Timestamp: ts.Add(2 * time.Second),
+				},
+			},
+			Output: Output{
+				Response: []scanNotification{
+					{
+						ScanID: "1",
+						SiteID: "1",
+					},
+					{
+						ScanID: "2",
+						SiteID: "2",
+					},
+					{
+						ScanID: "3",
+						SiteID: "3",
+					},
+					{
+						ScanID: "4",
+						SiteID: "4",
+					},
+				},
+			},
+		},
+		{
+			Name:      "scans fetched out of order with duplicate timestamps",
+			Timestamp: ts,
+			Scans: []domain.CompletedScan{
+				{
+					ScanID:    "4",
+					SiteID:    "4",
+					Timestamp: ts.Add(3 * time.Second),
+				},
+				{
+					ScanID:    "1",
+					SiteID:    "1",
+					Timestamp: ts.Add(1 * time.Second),
+				},
+				{
+					ScanID:    "3",
+					SiteID:    "3",
+					Timestamp: ts.Add(3 * time.Second),
+				},
+				{
+					ScanID:    "2",
+					SiteID:    "2",
+					Timestamp: ts.Add(2 * time.Second),
+				},
+			},
+			Output: Output{
+				Response: []scanNotification{
+					{
+						ScanID: "1",
+						SiteID: "1",
+					},
+					{
+						ScanID: "2",
+						SiteID: "2",
+					},
+					{
+						ScanID: "4",
+						SiteID: "4",
+					},
+					{
+						ScanID: "3",
+						SiteID: "3",
+					},
+				},
+			},
+		},
+	}
+
+	mockScanFetcher := NewMockScanFetcher(ctrl)
+	mockTimestampFetcher := NewMockTimestampFetcher(ctrl)
+	mockTimestampStorer := NewMockTimestampStorer(ctrl)
+	mockProducer := NewMockProducer(ctrl)
+
+	handler := NotificationHandler{
+		LogFn:            testLogFn,
+		ScanFetcher:      mockScanFetcher,
+		TimestampFetcher: mockTimestampFetcher,
+		TimestampStorer:  mockTimestampStorer,
+		Producer:         mockProducer,
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			mockTimestampFetcher.EXPECT().FetchTimestamp(gomock.Any()).Return(tt.Timestamp, nil)
+			mockScanFetcher.EXPECT().FetchScans(gomock.Any(), tt.Timestamp).Return(tt.Scans, nil)
+			for range tt.Scans {
+				mockProducer.EXPECT().Produce(gomock.Any(), gomock.Any()).Return(nil)
+			}
+			for range tt.Scans {
+				mockTimestampStorer.EXPECT().StoreTimestamp(gomock.Any(), gomock.Any()).Return(nil)
+			}
+
+			output, _ := handler.Handle(context.Background())
+			require.Equal(t, tt.Output, output)
 		})
 	}
 }

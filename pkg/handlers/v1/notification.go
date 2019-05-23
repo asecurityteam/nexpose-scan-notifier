@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"sort"
 
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/logs"
@@ -12,7 +13,7 @@ type Output struct {
 	Response []scanNotification `json:"response"`
 }
 
-// scanNotification represents
+// scanNotification represents a completed scan event.
 type scanNotification struct {
 	ScanID string `json:"scanID"`
 	SiteID string `json:"siteID"`
@@ -27,8 +28,9 @@ type NotificationHandler struct {
 	LogFn            domain.LogFn
 }
 
-// Handle queries for completed scans since the last invocation, produces all
-// completed scans to a queue, and returns the list of completed scans.
+// Handle queries for completed scans since the last known successfully processed
+// scan timestamp, produces all completed scans to a queue, and returns the list
+// of completed scans.
 func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 	logger := h.LogFn(ctx)
 
@@ -47,9 +49,14 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 		return Output{}, err
 	}
 
+	// sort scans by earliest time completed
+	sort.SliceStable(scans, func(left, right int) bool {
+		return scans[left].Timestamp.Before(scans[right].Timestamp)
+	})
+
 	scanNotifications := make([]scanNotification, len(scans))
-	for i, scan := range scans {
-		// Produce completed scans to a queue
+	for offset, scan := range scans {
+		// Produce completed scan events to a queue
 		err := h.Producer.Produce(ctx, scan)
 		if err != nil {
 			logger.Error(logs.ProducerFailure{Reason: err.Error()})
@@ -58,7 +65,7 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 		if err := h.TimestampStorer.StoreTimestamp(ctx, scan.Timestamp); err != nil {
 			return Output{}, err
 		}
-		scanNotifications[i] = completedScanToScanNotification(scan)
+		scanNotifications[offset] = completedScanToScanNotification(scan)
 	}
 	return Output{Response: scanNotifications}, nil
 }

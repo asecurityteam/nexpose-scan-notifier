@@ -56,7 +56,7 @@ paths:
         backend: app
   /notification:
     post:
-      description: Poll Nexpose for scans completed since the last invocation of this endpoint.
+      description: Poll Nexpose for scans completed since the last known successfully processed scan timestamp.
       responses:
         200:
           description: "Success"

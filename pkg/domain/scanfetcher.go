@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// CompletedScan represents identifiers for a completed Nexpose scan
+// CompletedScan represents identifiers for a completed Nexpose scan.
 type CompletedScan struct {
 	ScanID    string
 	SiteID    string
