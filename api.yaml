@@ -30,10 +30,16 @@ x-runtime:
 x-transportd:
   backends:
     - app
+    - nexpose
   app:
     host: "http://app:8081"
     pool:
       ttl: "24h"
+      count: 1
+  nexpose:
+    host: "${NEXPOSE_API_HOST}"
+    pool:
+      ttl: "15m"
       count: 1
 info:
   version: 1.0.0
@@ -78,6 +84,104 @@ paths:
           request: '#! json .Request.Body !#'
           success: '{"status": 200, "bodyPassthrough": true}'
           error: '{"status": 500, "bodyPassthrough": true}'
+  /api/3/scans:
+    get:
+      description: Nexpose endpoint for returning all scans.
+      parameters:
+        - name: active
+          in: query
+          description: "Return running scans or past scans (true/false value)."
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: "The index of the page (zero-based) to retrieve."
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          description: "The number of records per page to retrieve."
+          required: false
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: >
+            The criteria to sort the records by, in the format:
+            property[,ASC|DESC]. The default sort order is ascending.
+            Multiple sort criteria can be specified using multiple sort
+            query parameters.
+          required: false
+          explode: true
+          style: form
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NexposeResponse'
+        401:
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NexposeError'
+        404:
+          description: "Not Found"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NexposeError'
+      x-transportd:
+        backend: nexpose
+        enabled:
+          - "accesslog"
+          - "metrics"
+          - "requestvalidation"
+          - "responsevalidation"
+          - "timeout"
+          - "retry"
+          - "basicauth"
+        metrics:
+          pathtag: "nexpose"
+          backendtag: "client_dependency"
+          putidle: "http.client.put_idle"
+          bytestotal: "http.client.bytes_total"
+          bytessent: "http.client.bytes_sent"
+          bytesreceived: "http.client.bytes_received"
+          firstresponsebyte: "http.client.first_response_byte.timing"
+          wroteheaders: "http.client.wrote_headers.timing"
+          tls: "http.client.tls.timing"
+          connectionidle: "http.client.connection_idle.timing"
+          tcp: "http.client.tcp.timing"
+          dns: "http.client.dns.timing"
+          timing: "http.client.timing"
+        timeout:
+          after: "2s"
+        retry:
+          backoff: "50ms"
+          limit: 3
+          codes:
+            - 500
+            - 501
+            - 502
+            - 503
+            - 504
+            - 505
+            - 506
+            - 507
+            - 508
+            - 509
+            - 510
+            - 511
+        basicauth:
+          username: "${NEXPOSE_API_USERNAME}"
+          password: "${NEXPOSE_API_PASSWORD}"
 components:
   schemas:
     ScanNotification:
@@ -109,4 +213,68 @@ components:
           type: array
           items:
             type: string
+    NexposeResponse:
+      type: object
+      required:
+        - page
+        - resources
+      properties:
+        page:
+          $ref: '#/components/schemas/NexposePage'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/NexposeScanResource'
+    NexposePage:
+      type: object
+      description: The details of pagination from the Nexpose API.
+      properties:
+        number:
+          type: integer
+          description: The index (zero-based) of the current page returned.
+        size:
+          type: integer
+          description: The maximum size of the page returned.
+        totalPages:
+          type: integer
+          description: The total number of pages available.
+        totalResources:
+          type: integer
+          description: The total number of resources available across all pages.
+    NexposeScanResource:
+      type: object
+      description: A single scan element returned from the Nexpose scan API.
+      properties:
+        endTime:
+          type: string
+          format: date-time
+          description: The end time of the scan in ISO8601 format.
+        id:
+          type: integer
+          description: The identifier of the scan.
+        siteId:
+          type: integer
+          description: The identifier of the scan site.
+        status:
+          type: string
+          description: The scan status.
+          enum:
+            - aborted
+            - unknown
+            - running
+            - finished
+            - stopped
+            - error
+            - paused
+            - dispatched
+            - integrating
+    NexposeError:
+      type: object
+      properties:
+        status:
+          type: string
+          description: The HTTP status code for the error (same as in the HTTP response).
+        message:
+          type: string
+          description: The messages indicating the cause or reason for failure.
 

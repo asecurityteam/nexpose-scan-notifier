@@ -156,7 +156,7 @@
   name = "golang.org/x/net"
   packages = ["context"]
   pruneopts = "UT"
-  revision = "018c4d40a106a7ae83689758294fcd8d23850745"
+  revision = "f3200d17e092c607f615320ecaad13d87ad9a2b3"
 
 [solve-meta]
   analyzer-name = "dep"
