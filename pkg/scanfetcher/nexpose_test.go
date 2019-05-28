@@ -20,7 +20,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	host, _ := url.Parse("http://localhost")
+	endpoint, _ := url.Parse("http://localhost")
 	timestamp := time.Date(2019, 05, 24, 00, 00, 00, 00, time.UTC)
 	afterTimestamp := time.Date(2019, 05, 25, 00, 00, 00, 00, time.UTC)
 	beforeTimestamp := time.Date(2019, 05, 23, 00, 00, 00, 00, time.UTC)
@@ -165,8 +165,8 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				mockRT.EXPECT().RoundTrip(gomock.Any()).Return(tt.responses[offset], tt.responseErrs[offset])
 			}
 			nexposeClient := &NexposeClient{
-				Client: &http.Client{Transport: mockRT},
-				Host:   host,
+				Client:   &http.Client{Transport: mockRT},
+				Endpoint: endpoint,
 			}
 			actual, err := nexposeClient.FetchScans(context.Background(), timestamp)
 			require.Equal(t, tt.expected, actual)
@@ -191,7 +191,7 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	host, _ := url.Parse("http://localhost")
+	endpoint, _ := url.Parse("http://localhost")
 	ts := time.Date(2019, 05, 24, 00, 01, 00, 00, time.UTC)
 	testScanResponse := fmt.Sprintf(`
 		{
@@ -268,8 +268,8 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 			mockRT := NewMockRoundTripper(ctrl)
 			mockRT.EXPECT().RoundTrip(gomock.Any()).Return(tt.response, tt.responseErr)
 			nexposeClient := &NexposeClient{
-				Client: &http.Client{Transport: mockRT},
-				Host:   host,
+				Client:   &http.Client{Transport: mockRT},
+				Endpoint: endpoint,
 			}
 			actual, err := nexposeClient.makePagedNexposeScanRequest(0)
 			require.Equal(t, tt.expected, actual)

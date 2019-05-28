@@ -30,8 +30,14 @@ x-runtime:
 x-transportd:
   backends:
     - nexpose
+    - queue
   nexpose:
     host: "${NEXPOSE_API_HOST}"
+    pool:
+      ttl: "15m"
+      count: 1
+  queue:
+    host: "${HTTPPRODUCER_API_HOST}"
     pool:
       ttl: "15m"
       count: 1
@@ -144,6 +150,64 @@ paths:
         basicauth:
           username: "${NEXPOSE_API_USERNAME}"
           password: "${NEXPOSE_API_PASSWORD}"
+  /publish:
+    post:
+      description: Publish a completed scan event to an HTTP queue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanNotification'
+      responses:
+        "200":
+          description: "Success"
+        "400":
+          description: "Invalid input"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-transportd:
+        backend: queue
+        enabled:
+          - "accesslog"
+          - "metrics"
+          - "requestvalidation"
+          - "timeout"
+          - "retry"
+        metrics:
+          pathtag: "queue"
+          backendtag: "client_dependency"
+          putidle: "http.client.put_idle"
+          bytestotal: "http.client.bytes_total"
+          bytessent: "http.client.bytes_sent"
+          bytesreceived: "http.client.bytes_received"
+          firstresponsebyte: "http.client.first_response_byte.timing"
+          wroteheaders: "http.client.wrote_headers.timing"
+          tls: "http.client.tls.timing"
+          connectionidle: "http.client.connection_idle.timing"
+          tcp: "http.client.tcp.timing"
+          dns: "http.client.dns.timing"
+          timing: "http.client.timing"
+        timeout:
+          after: "2s"
+        retry:
+          backoff: "50ms"
+          limit: 3
+          codes:
+            - 500
+            - 501
+            - 502
+            - 503
+            - 504
+            - 505
+            - 506
+            - 507
+            - 508
+            - 509
+            - 510
+            - 511
 components:
   schemas:
     NexposeResponse:
@@ -210,4 +274,26 @@ components:
         message:
           type: string
           description: The messages indicating the cause or reason for failure.
+    ScanNotification:
+      type: object
+      required:
+        - siteID
+      properties:
+        scanID:
+          type: string
+          description: The Nexpose scan ID for the completed scan.
+        siteID:
+          type: string
+          description: The Nexpose site ID for the site that just got scanned.
+    Error:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+        errorType:
+          type: string
+        stackTrace:
+          type: array
+          items:
+            type: string
 
