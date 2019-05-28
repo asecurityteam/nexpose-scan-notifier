@@ -24,15 +24,19 @@ services:
       - SERVERFULL_RUNTIME_STATS_DATADOG_ADDRESS=statsd:8125
       - SERVERFULL_RUNTIME_SIGNALS_INSTALLED=OS
       - SERVERFULL_RUNTIME_SIGNALS_OS_SIGNALS=15 2
-      - NEXPOSE_HOST
+      - NEXPOSE_HOST=http://gateway-outbound:8082
       - NEXPOSE_PAGESIZE
   gateway:
     build:
       context: .
       dockerfile: gateway.Dockerfile
+    ports:
+      - "8080:8080"
+  gateway-outbound:
+    build:
+      context: .
+      dockerfile: gateway-outbound.Dockerfile
     environment:
       - NEXPOSE_API_HOST
       - NEXPOSE_API_USERNAME
       - NEXPOSE_API_PASSWORD
-    ports:
-      - "8080:8080"
