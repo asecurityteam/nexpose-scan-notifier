@@ -117,6 +117,7 @@ func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanRespon
 	u.RawQuery = q.Encode()
 
 	req, _ := http.NewRequest(http.MethodGet, u.String(), http.NoBody)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := n.Client.Do(req)
 	if err != nil {
 		return nexposeScanResponse{}, err
