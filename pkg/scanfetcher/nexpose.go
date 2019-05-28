@@ -3,7 +3,6 @@ package scanfetcher
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -67,8 +66,15 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 		switch err.(type) {
 		case nil:
 			completedScans = append(completedScans, completedScan)
+		case scanNotFinishedError:
+			// skip scans without a status of "finished"
 		case outOfRangeError:
+			// since scans are returned in descending order by scan time, return
+			// the list of completed scans after finding the first scan outside
+			// the valid time range
 			return completedScans, nil
+		default:
+			return nil, err
 		}
 	}
 
@@ -83,8 +89,15 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 			switch err.(type) {
 			case nil:
 				completedScans = append(completedScans, completedScan)
+			case scanNotFinishedError:
+				// skip scans without a status of "finished"
 			case outOfRangeError:
+				// since scans are returned in descending order by scan time, return
+				// the list of completed scans after finding the first scan outside
+				// the valid time range
 				return completedScans, nil
+			default:
+				return nil, err
 			}
 		}
 	}
@@ -126,7 +139,11 @@ func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanRespon
 func scanResourceToCompletedScan(resource resource, start time.Time) (domain.CompletedScan, error) {
 	// skip scans that have not finished
 	if !strings.EqualFold(resource.Status, finishedScanStatus) {
-		return domain.CompletedScan{}, fmt.Errorf("scan not finished")
+		return domain.CompletedScan{}, scanNotFinishedError{
+			ScanID: strconv.Itoa(resource.ScanID),
+			SiteID: strconv.Itoa(resource.SiteID),
+			Status: resource.Status,
+		}
 	}
 
 	// extract scan end time from scan resource

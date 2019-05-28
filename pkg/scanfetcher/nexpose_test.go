@@ -24,6 +24,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 	timestamp := time.Date(2019, 05, 24, 00, 00, 00, 00, time.UTC)
 	afterTimestamp := time.Date(2019, 05, 25, 00, 00, 00, 00, time.UTC)
 	beforeTimestamp := time.Date(2019, 05, 23, 00, 00, 00, 00, time.UTC)
+	invalidTimestamp := "2019-05-28 1PM"
 	testScanResponse := `
 		{
 			"resources": [
@@ -124,6 +125,34 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				nil,
 			},
 			responseErrs: []error{nil, fmt.Errorf("nexpose error")},
+			expected:     nil,
+			expectErr:    true,
+		},
+		{
+			name: "one page with invalid timestamp",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						invalidTimestamp, finishedScanStatus, 0, 1)))),
+				},
+			},
+			responseErrs: []error{nil},
+			expected:     nil,
+			expectErr:    true,
+		},
+		{
+			name: "success with first page, error on second page with scan with invalid timestamp",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+				},
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						invalidTimestamp, finishedScanStatus, 1, 2)))),
+				},
+			},
+			responseErrs: []error{nil, nil},
 			expected:     nil,
 			expectErr:    true,
 		},
