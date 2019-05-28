@@ -116,8 +116,6 @@ paths:
           - "retry"
           - "basicauth"
         metrics:
-          pathtag: "nexpose"
-          backendtag: "client_dependency"
           putidle: "http.client.put_idle"
           bytestotal: "http.client.bytes_total"
           bytessent: "http.client.bytes_sent"
@@ -177,8 +175,6 @@ paths:
           - "timeout"
           - "retry"
         metrics:
-          pathtag: "queue"
-          backendtag: "client_dependency"
           putidle: "http.client.put_idle"
           bytestotal: "http.client.bytes_total"
           bytessent: "http.client.bytes_sent"
