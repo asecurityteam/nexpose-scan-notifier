@@ -46,7 +46,7 @@ type nexposeScanResponse struct {
 // NexposeClient implements the interfaces to fetch scans from Nexpose
 type NexposeClient struct {
 	Client   *http.Client
-	Host     *url.URL
+	Endpoint *url.URL
 	PageSize int
 }
 
@@ -106,7 +106,7 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 }
 
 func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanResponse, error) {
-	u, _ := url.Parse(n.Host.String())
+	u, _ := url.Parse(n.Endpoint.String())
 	u.Path = path.Join(u.Path, "api", "3", "scans")
 
 	q := u.Query()
@@ -117,6 +117,7 @@ func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanRespon
 	u.RawQuery = q.Encode()
 
 	req, _ := http.NewRequest(http.MethodGet, u.String(), http.NoBody)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := n.Client.Do(req)
 	if err != nil {
 		return nexposeScanResponse{}, err

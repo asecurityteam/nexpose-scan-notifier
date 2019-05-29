@@ -13,29 +13,29 @@ func TestName(t *testing.T) {
 }
 
 func TestComponentDefaultConfig(t *testing.T) {
-	component := &NexposeConfigComponent{}
+	component := &NexposeComponent{}
 	config := component.Settings()
-	require.Empty(t, config.Host)
+	require.Empty(t, config.Endpoint)
 	require.Equal(t, config.PageSize, 100)
 }
 
 func TestNexposeClientConfigWithValues(t *testing.T) {
-	nexposeClientComponent := NexposeConfigComponent{}
+	nexposeComponent := NexposeComponent{}
 	config := &NexposeConfig{
-		Host:     "http://localhost",
+		Endpoint: "http://localhost",
 		PageSize: 5,
 	}
-	nexposeClient, err := nexposeClientComponent.New(context.Background(), config)
+	nexposeClient, err := nexposeComponent.New(context.Background(), config)
 
-	require.Equal(t, "http://localhost", nexposeClient.Host.String())
+	require.Equal(t, "http://localhost", nexposeClient.Endpoint.String())
 	require.Equal(t, 5, nexposeClient.PageSize)
 	require.Nil(t, err)
 }
 
-func TestNexposeClientConfigWithInvalidHost(t *testing.T) {
-	nexposeClientComponent := NexposeConfigComponent{}
-	config := &NexposeConfig{Host: "~!@#$%^&*()_+:?><!@#$%^&*())_:"}
-	_, err := nexposeClientComponent.New(context.Background(), config)
+func TestNexposeClientConfigWithInvalidEndpoint(t *testing.T) {
+	nexposeComponent := NexposeComponent{}
+	config := &NexposeConfig{Endpoint: "~!@#$%^&*()_+:?><!@#$%^&*())_:"}
+	_, err := nexposeComponent.New(context.Background(), config)
 
 	require.Error(t, err)
 }

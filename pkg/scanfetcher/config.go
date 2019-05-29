@@ -6,10 +6,10 @@ import (
 )
 
 // NexposeConfig holds configuration to connect to Nexpose
-// and make a call to the fetch assets API
+// and make a call to the fetch scans API
 type NexposeConfig struct {
-	Host     string `description:"The scheme and host of a Nexpose instance."`
-	PageSize int    `description:"The number of assets that should be returned from the Nexpose API at one time."`
+	Endpoint string `description:"The scheme and host of a Nexpose instance."`
+	PageSize int    `description:"The number of scans that should be returned from the Nexpose API at one time."`
 }
 
 // Name is used by the settings library and will add a "NEXPOSE_"
@@ -18,26 +18,26 @@ func (c *NexposeConfig) Name() string {
 	return "Nexpose"
 }
 
-// NexposeConfigComponent satisfies the settings library Component
+// NexposeComponent satisfies the settings library Component
 // API, and may be used by the settings.NewComponent function.
-type NexposeConfigComponent struct{}
+type NexposeComponent struct{}
 
 // Settings can be used to populate default values if there are any
-func (*NexposeConfigComponent) Settings() *NexposeConfig {
+func (*NexposeComponent) Settings() *NexposeConfig {
 	return &NexposeConfig{
 		PageSize: 100,
 	}
 }
 
 // New constructs a NexposeClient from a config.
-func (*NexposeConfigComponent) New(_ context.Context, c *NexposeConfig) (*NexposeClient, error) {
-	host, err := url.Parse(c.Host)
+func (*NexposeComponent) New(_ context.Context, c *NexposeConfig) (*NexposeClient, error) {
+	endpoint, err := url.Parse(c.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	return &NexposeClient{
-		Host:     host,
+		Endpoint: endpoint,
 		PageSize: c.PageSize,
 	}, nil
 }
