@@ -35,10 +35,10 @@ services:
       # DYNAMODB_PARTITIONKEYNAME: partitionkey
       # DYNAMODB_PARTITIONKEYVALUE: lastProcessed
       # DYNAMODB_TIMESTAMPKEYNAME: timestamp
-  gateway:
+  gateway-inbound:
     build:
       context: .
-      dockerfile: gateway.Dockerfile
+      dockerfile: gateway-inbound.Dockerfile
     ports:
       - "8080:8080"
   gateway-outbound:
