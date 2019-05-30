@@ -1,20 +1,21 @@
-<a id="markdown-Nexpose Scan Notifier" name="Nexpose Scan Notifier"></a>
+<a id="markdown-nexpose-scan-notifier" name="nexpose-scan-notifier"></a>
 # Nexpose Scan Notifier
 
 <https://github.com/asecurityteam/nexpose-scan-notifier>
 
 <!-- TOC -->
 
-- [Nexpose Scan Notifier](#Nexpose Scan Notifier)
-    - [Overview](#overview)
-    - [Quick Start](#quick-start)
-    - [Configuration](#configuration)
-    - [Status](#status)
-    - [Contributing](#contributing)
-        - [Building And Testing](#building-and-testing)
-        - [Quality Gates](#quality-gates)
-        - [License](#license)
-        - [Contributing Agreement](#contributing-agreement)
+- [Nexpose Scan Notifier](#nexpose-scan-notifier)
+  - [Overview](#overview)
+  - [Configuration](#configuration)
+    - [Timestamp Storage](#timestamp-storage)
+      - [DynamoDB](#dynamodb)
+  - [Status](#status)
+  - [Contributing](#contributing)
+    - [Building And Testing](#building-and-testing)
+    - [Quality Gates](#quality-gates)
+    - [License](#license)
+    - [Contributing Agreement](#contributing-agreement)
 
 <!-- /TOC -->
 
@@ -26,7 +27,38 @@ Nexpose Scan Notifier is an API service which queries Nexpose and generates even
 <a id="markdown-configuration" name="configuration"></a>
 ## Configuration
 
-<Details of how to actually work with the project>
+<a id="markdown-timestamp-storage" name="timestamp-storage"></a>
+### Timestamp Storage
+
+This project depends on a mechanism to persist and retrieve the timestamp of the last processed scan. This ensures that
+successfully processed scans are not reprocessed, and any scans which are not successfully produced can be retried.
+
+The current implementation of the timestamp storage interface is a DynamoDB table.
+
+<a id="markdown-dynamodb" name="dynamodb"></a>
+#### DynamoDB
+
+This project stores the timestamp of the last processed scan in a simple DynamoDB table. The table uses a static
+partition key (which uses "lastProcessed" as its default value), and successfully processed timestamps are upserted with
+the key "timestamp". The table schema would look like the following:
+
+```json
+{
+    TableName : "ScanTimestamp",
+    KeySchema: [
+        {
+            AttributeName: "partitionkey",
+            KeyType: "HASH", //Partition key
+        }
+    ],
+    AttributeDefinitions: [
+        {
+            AttributeName: "partitionkey",
+            AttributeType: "S"
+        }
+    ]
+}
+```
 
 <a id="markdown-status" name="status"></a>
 ## Status
