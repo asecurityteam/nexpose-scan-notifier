@@ -49,7 +49,7 @@ func TestHandle(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(time.Second),
 				},
 			},
@@ -60,7 +60,7 @@ func TestHandle(t *testing.T) {
 				Response: []scanNotification{
 					{
 						ScanID: "1",
-						SiteID: "1",
+						SiteID: "11",
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func TestHandle(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(time.Second),
 				},
 			},
@@ -85,7 +85,7 @@ func TestHandle(t *testing.T) {
 				Response: []scanNotification{
 					{
 						ScanID: "1",
-						SiteID: "1",
+						SiteID: "11",
 					},
 				},
 			},
@@ -123,12 +123,12 @@ func TestHandle(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "2",
-					SiteID:    "2",
+					SiteID:    "22",
 					Timestamp: ts.Add(2 * time.Second),
 				},
 			},
@@ -146,7 +146,7 @@ func TestHandle(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(1 * time.Second),
 				},
 			},
@@ -208,12 +208,12 @@ func TestHandleSortOrder(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "2",
-					SiteID:    "2",
+					SiteID:    "22",
 					Timestamp: ts.Add(2 * time.Second),
 				},
 			},
@@ -221,11 +221,11 @@ func TestHandleSortOrder(t *testing.T) {
 				Response: []scanNotification{
 					{
 						ScanID: "1",
-						SiteID: "1",
+						SiteID: "11",
 					},
 					{
 						ScanID: "2",
-						SiteID: "2",
+						SiteID: "22",
 					},
 				},
 			},
@@ -236,22 +236,22 @@ func TestHandleSortOrder(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "4",
-					SiteID:    "4",
+					SiteID:    "44",
 					Timestamp: ts.Add(4 * time.Second),
 				},
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "3",
-					SiteID:    "3",
+					SiteID:    "33",
 					Timestamp: ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "2",
-					SiteID:    "2",
+					SiteID:    "22",
 					Timestamp: ts.Add(2 * time.Second),
 				},
 			},
@@ -259,19 +259,19 @@ func TestHandleSortOrder(t *testing.T) {
 				Response: []scanNotification{
 					{
 						ScanID: "1",
-						SiteID: "1",
+						SiteID: "11",
 					},
 					{
 						ScanID: "2",
-						SiteID: "2",
+						SiteID: "22",
 					},
 					{
 						ScanID: "3",
-						SiteID: "3",
+						SiteID: "33",
 					},
 					{
 						ScanID: "4",
-						SiteID: "4",
+						SiteID: "44",
 					},
 				},
 			},
@@ -282,22 +282,22 @@ func TestHandleSortOrder(t *testing.T) {
 			Scans: []domain.CompletedScan{
 				{
 					ScanID:    "4",
-					SiteID:    "4",
+					SiteID:    "44",
 					Timestamp: ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "1",
-					SiteID:    "1",
+					SiteID:    "11",
 					Timestamp: ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "3",
-					SiteID:    "3",
+					SiteID:    "33",
 					Timestamp: ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "2",
-					SiteID:    "2",
+					SiteID:    "22",
 					Timestamp: ts.Add(2 * time.Second),
 				},
 			},
@@ -305,19 +305,19 @@ func TestHandleSortOrder(t *testing.T) {
 				Response: []scanNotification{
 					{
 						ScanID: "1",
-						SiteID: "1",
+						SiteID: "11",
 					},
 					{
 						ScanID: "2",
-						SiteID: "2",
+						SiteID: "22",
 					},
 					{
 						ScanID: "4",
-						SiteID: "4",
+						SiteID: "44",
 					},
 					{
 						ScanID: "3",
-						SiteID: "3",
+						SiteID: "33",
 					},
 				},
 			},

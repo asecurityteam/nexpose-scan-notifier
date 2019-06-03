@@ -73,6 +73,6 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 func completedScanToScanNotification(scan domain.CompletedScan) scanNotification {
 	return scanNotification{
 		ScanID: scan.ScanID,
-		SiteID: scan.ScanID,
+		SiteID: scan.SiteID,
 	}
 }
