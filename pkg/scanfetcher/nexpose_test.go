@@ -56,6 +56,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 1)))),
+					StatusCode: http.StatusOK,
 				},
 			},
 			responseErrs: []error{nil},
@@ -74,14 +75,17 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						afterTimestamp.Format(time.RFC3339Nano), "running", 0, 3)))),
+					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 1, 3)))),
+					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						beforeTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 2, 3)))),
+					StatusCode: http.StatusOK,
 				},
 			},
 			responseErrs: []error{nil, nil, nil},
@@ -100,6 +104,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						beforeTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 1)))),
+					StatusCode: http.StatusOK,
 				},
 			},
 			responseErrs: []error{nil},
@@ -121,6 +126,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+					StatusCode: http.StatusOK,
 				},
 				nil,
 			},
@@ -134,6 +140,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						invalidTimestamp, finishedScanStatus, 0, 1)))),
+					StatusCode: http.StatusOK,
 				},
 			},
 			responseErrs: []error{nil},
@@ -146,13 +153,28 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
 						invalidTimestamp, finishedScanStatus, 1, 2)))),
+					StatusCode: http.StatusOK,
 				},
 			},
 			responseErrs: []error{nil, nil},
+			expected:     nil,
+			expectErr:    true,
+		},
+		{
+			name: "response status not ok",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+					StatusCode: http.StatusInternalServerError,
+				},
+			},
+			responseErrs: []error{nil},
 			expected:     nil,
 			expectErr:    true,
 		},
@@ -219,8 +241,11 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 		expectErr   bool
 	}{
 		{
-			name:        "success",
-			response:    &http.Response{Body: ioutil.NopCloser(bytes.NewBuffer([]byte(testScanResponse)))},
+			name: "success",
+			response: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(testScanResponse))),
+				StatusCode: http.StatusOK,
+			},
 			responseErr: nil,
 			expected: nexposeScanResponse{
 				Resources: []resource{
@@ -248,15 +273,21 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 			expectErr:   true,
 		},
 		{
-			name:        "io read error",
-			response:    &http.Response{Body: ioutil.NopCloser(&errReader{Error: fmt.Errorf("io read error")})},
+			name: "io read error",
+			response: &http.Response{
+				Body:       ioutil.NopCloser(&errReader{Error: fmt.Errorf("io read error")}),
+				StatusCode: http.StatusOK,
+			},
 			responseErr: nil,
 			expected:    nexposeScanResponse{},
 			expectErr:   true,
 		},
 		{
-			name:        "invalid json error",
-			response:    &http.Response{Body: ioutil.NopCloser(bytes.NewBuffer([]byte(`{notjson}`)))},
+			name: "invalid json error",
+			response: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`{notjson}`))),
+				StatusCode: http.StatusOK,
+			},
 			responseErr: nil,
 			expected:    nexposeScanResponse{},
 			expectErr:   true,
