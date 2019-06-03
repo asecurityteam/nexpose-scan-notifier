@@ -3,6 +3,7 @@ package scanfetcher
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -127,6 +128,11 @@ func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanRespon
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nexposeScanResponse{}, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nexposeScanResponse{}, fmt.Errorf("unexpected response from nexpose scans api: %d %s",
+			res.StatusCode, string(body))
 	}
 
 	var scanResp nexposeScanResponse
