@@ -160,8 +160,8 @@ func scanResourceToCompletedScan(resource resource, start time.Time) (domain.Com
 	}
 
 	// scans are fetched sorted by end time in descending order,
-	// so the first scan resource before the start time signals
-	// that no more scans need to be processed
+	// so the first scan resource before or equal to the start
+	// time signals that no more scans need to be processed
 	if endTime.Before(start) || endTime.Equal(start) {
 		return domain.CompletedScan{}, outOfRangeError{
 			ScanID:   strconv.Itoa(resource.ScanID),
