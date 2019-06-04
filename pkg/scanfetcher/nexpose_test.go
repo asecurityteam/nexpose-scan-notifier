@@ -351,6 +351,17 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			err:      outOfRangeError{},
 		},
 		{
+			name: "scan out of range equal timestamp",
+			resource: resource{
+				EndTime: start.Format(time.RFC3339Nano),
+				ScanID:  1001,
+				SiteID:  1,
+				Status:  finishedScanStatus,
+			},
+			expected: domain.CompletedScan{},
+			err:      outOfRangeError{},
+		},
+		{
 			name: "scan not finished",
 			resource: resource{
 				EndTime: afterStart.Format(time.RFC3339Nano),
