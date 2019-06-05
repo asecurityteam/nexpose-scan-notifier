@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -35,5 +37,15 @@ func (p *HTTP) Produce(ctx context.Context, scan domain.CompletedScan) error {
 		return err
 	}
 	defer res.Body.Close()
+
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response from http producer: %d %s",
+			res.StatusCode, string(resBody))
+	}
 	return nil
 }
