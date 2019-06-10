@@ -1,0 +1,18 @@
+version: '3'
+services:
+  test:
+    image: asecurityteam/sdcli:v1
+    environment:
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_REGION: us-west-2
+      # required for aws sdk
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    command: go integration
+    working_dir: /go/src/${PROJECT_PATH}
+    volumes:
+      - ${DIR}:/go/src/${PROJECT_PATH}
+    depends_on:
+      - dynamodb-local
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
