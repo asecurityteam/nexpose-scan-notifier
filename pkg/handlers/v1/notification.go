@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/logs"
@@ -26,6 +27,7 @@ type NotificationHandler struct {
 	TimestampStorer  domain.TimestampStorer
 	Producer         domain.Producer
 	LogFn            domain.LogFn
+	StatFn           domain.StatFn
 }
 
 // Handle queries for completed scans since the last known successfully processed
@@ -33,6 +35,7 @@ type NotificationHandler struct {
 // of completed scans.
 func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 	logger := h.LogFn(ctx)
+	stater := h.StatFn(ctx)
 
 	lastScanTimestamp, err := h.TimestampFetcher.FetchTimestamp(ctx)
 	switch err.(type) {
@@ -56,6 +59,7 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 
 	scanNotifications := make([]scanNotification, len(scans))
 	for offset, scan := range scans {
+		scanCompletedTime := scan.Timestamp
 		// Produce completed scan events to a queue
 		err := h.Producer.Produce(ctx, scan)
 		if err != nil {
@@ -65,6 +69,7 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 		if err := h.TimestampStorer.StoreTimestamp(ctx, scan.Timestamp); err != nil {
 			return Output{}, err
 		}
+		stater.Timing("scannotificationdelay", time.Since(scanCompletedTime)*time.Millisecond)
 		scanNotifications[offset] = completedScanToScanNotification(scan)
 	}
 	return Output{Response: scanNotifications}, nil

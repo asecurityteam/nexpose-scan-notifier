@@ -50,6 +50,7 @@ func main() {
 		ScanFetcher:      nexposeClient,
 		Producer:         httpProducer,
 		LogFn:            domain.LoggerFromContext,
+		StatFn:           domain.StatFromContext,
 	}
 	handlers := map[string]serverfull.Function{
 		"notification": serverfull.NewFunction(notificationHandler.Handle),
