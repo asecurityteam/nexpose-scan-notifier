@@ -59,7 +59,6 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 
 	scanNotifications := make([]scanNotification, len(scans))
 	for offset, scan := range scans {
-		scanCompletedTime := scan.Timestamp
 		// Produce completed scan events to a queue
 		err := h.Producer.Produce(ctx, scan)
 		if err != nil {
@@ -69,7 +68,8 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 		if err := h.TimestampStorer.StoreTimestamp(ctx, scan.Timestamp); err != nil {
 			return Output{}, err
 		}
-		stater.Timing("scannotificationdelay", time.Since(scanCompletedTime)*time.Millisecond)
+		// emit a statistic of the time between a completed scan and the scan is produced
+		stater.Timing("scannotificationdelay", time.Since(scan.Timestamp))
 		scanNotifications[offset] = completedScanToScanNotification(scan)
 	}
 	return Output{Response: scanNotifications}, nil
