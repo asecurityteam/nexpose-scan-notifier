@@ -169,6 +169,7 @@ func TestHandle(t *testing.T) {
 		TimestampFetcher: mockTimestampFetcher,
 		TimestampStorer:  mockTimestampStorer,
 		Producer:         mockProducer,
+		StatFn:           MockStatFn,
 	}
 
 	for _, tt := range tc {
@@ -335,6 +336,7 @@ func TestHandleSortOrder(t *testing.T) {
 		TimestampFetcher: mockTimestampFetcher,
 		TimestampStorer:  mockTimestampStorer,
 		Producer:         mockProducer,
+		StatFn:           MockStatFn,
 	}
 
 	for _, tt := range tc {
