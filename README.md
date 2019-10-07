@@ -1,5 +1,6 @@
 <a id="markdown-nexpose-scan-notifier" name="nexpose-scan-notifier"></a>
 # Nexpose Scan Notifier
+[![GoDoc](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier?status.svg)](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier)
 
 <https://github.com/asecurityteam/nexpose-scan-notifier>
 
