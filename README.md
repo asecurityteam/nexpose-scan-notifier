@@ -1,6 +1,8 @@
 <a id="markdown-nexpose-scan-notifier" name="nexpose-scan-notifier"></a>
 # Nexpose Scan Notifier
 [![GoDoc](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier?status.svg)](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier)
+[![Build Status](https://travis-ci.com/asecurityteam/nexpose-scan-notifier.png?branch=master)](https://travis-ci.com/asecurityteam/nexpose-scan-notifier)
+[![codecov.io](https://codecov.io/github/asecurityteam/nexpose-scan-notifier/coverage.svg?branch=master)](https://codecov.io/github/asecurityteam/nexpose-scan-notifier?branch=master)
 
 <https://github.com/asecurityteam/nexpose-scan-notifier>
 
