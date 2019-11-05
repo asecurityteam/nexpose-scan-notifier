@@ -52,8 +52,11 @@ func main() {
 		LogFn:            domain.LoggerFromContext,
 		StatFn:           domain.StatFromContext,
 	}
+	dependencyCheckHandler := &v1.DependencyCheckHandler{}
+
 	handlers := map[string]serverfull.Function{
-		"notification": serverfull.NewFunction(notificationHandler.Handle),
+		"notification":    serverfull.NewFunction(notificationHandler.Handle),
+		"dependencycheck": serverfull.NewFunction(dependencyCheckHandler.Handle),
 	}
 
 	fetcher := &serverfull.StaticFetcher{Functions: handlers}
