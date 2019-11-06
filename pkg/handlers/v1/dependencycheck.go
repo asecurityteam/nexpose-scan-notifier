@@ -6,13 +6,13 @@ import (
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 )
 
-// DependencyCheckHandler stuff
+// DependencyCheckHandler takes in a domain.DependencyChecker to check external dependencies
 type DependencyCheckHandler struct {
 	DependencyChecker domain.DependencyChecker
 }
 
-// Handle stuff
+// Handle makes a call CheckDependencies from DependencyChecker that verifies this
+// app can talk to it's external dependencies
 func (h *DependencyCheckHandler) Handle(ctx context.Context) error {
-
-	return nil
+	return h.DependencyChecker.CheckDependencies(ctx)
 }

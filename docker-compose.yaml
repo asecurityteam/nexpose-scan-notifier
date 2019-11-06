@@ -35,6 +35,7 @@ services:
       # DYNAMODB_PARTITIONKEYNAME: partitionkey
       # DYNAMODB_PARTITIONKEYVALUE: lastProcessed
       # DYNAMODB_TIMESTAMPKEYNAME: timestamp
+      DEPENDENCYCHECK_NEXPOSEENDPOINT: "" # point to a nexpose endpoint
   gateway-inbound:
     build:
       context: .
