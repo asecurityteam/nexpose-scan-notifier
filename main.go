@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/asecurityteam/nexpose-scan-notifier/pkg/dependencycheck"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 	v1 "github.com/asecurityteam/nexpose-scan-notifier/pkg/handlers/v1"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/producer"
@@ -54,23 +53,15 @@ func main() {
 		StatFn:           domain.StatFromContext,
 	}
 
-	dependencyCheckComponent := dependencycheck.NewDependencyCheckComponent()
-	dependencyChecker := new(dependencycheck.DependencyCheck)
-	if err = settings.NewComponent(ctx, source, dependencyCheckComponent, dependencyChecker); err != nil {
-		panic(err.Error())
-	}
-
-	dependencyChecker.TimestampFetcher = dynamoDBTimestampStorage
-
 	dependencyCheckHandler := &v1.DependencyCheckHandler{
-		DependencyChecker: dependencyChecker,
+		NexposeClientDependencyChecker: nexposeClient,
+		DynamoDBDependencyChecker:      dynamoDBTimestampStorage,
 	}
 
 	handlers := map[string]serverfull.Function{
 		"notification":    serverfull.NewFunction(notificationHandler.Handle),
 		"dependencycheck": serverfull.NewFunction(dependencyCheckHandler.Handle),
 	}
-
 	fetcher := &serverfull.StaticFetcher{Functions: handlers}
 	if err := serverfull.Start(ctx, source, fetcher); err != nil {
 		panic(err.Error())

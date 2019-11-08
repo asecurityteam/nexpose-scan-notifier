@@ -2,7 +2,7 @@ package domain
 
 import "context"
 
-// DependencyChecker represents an interface for hydrating an Asset with vulnerability details
+// DependencyChecker represents an interface for checking external dependencies
 type DependencyChecker interface {
 	CheckDependencies(context.Context) error
 }

@@ -13,24 +13,49 @@ func TestDepCheckHandleSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	MockDependencyChecker := NewMockDependencyChecker(ctrl)
-	MockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(nil)
+	DynamoDBMockDependencyChecker := NewMockDependencyChecker(ctrl)
+	DynamoDBMockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(nil)
+	NexposeClientMockDependencyChecker := NewMockDependencyChecker(ctrl)
+	NexposeClientMockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(nil)
+
 	handler := &DependencyCheckHandler{
-		DependencyChecker: MockDependencyChecker,
+		DynamoDBDependencyChecker:      DynamoDBMockDependencyChecker,
+		NexposeClientDependencyChecker: NexposeClientMockDependencyChecker,
 	}
 	err := handler.Handle(context.Background())
 
 	assert.Nil(t, err)
 }
 
-func TestDepCheckHandleError(t *testing.T) {
+func TestDepCheckHandleDBError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	MockDependencyChecker := NewMockDependencyChecker(ctrl)
-	MockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(fmt.Errorf("error"))
+	DynamoDBMockDependencyChecker := NewMockDependencyChecker(ctrl)
+	DynamoDBMockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(fmt.Errorf("error"))
+	NexposeClientMockDependencyChecker := NewMockDependencyChecker(ctrl)
+
 	handler := &DependencyCheckHandler{
-		DependencyChecker: MockDependencyChecker,
+		DynamoDBDependencyChecker:      DynamoDBMockDependencyChecker,
+		NexposeClientDependencyChecker: NexposeClientMockDependencyChecker,
+	}
+	err := handler.Handle(context.Background())
+
+	assert.NotNil(t, err)
+}
+
+func TestDepCheckHandleNexposeClientError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	DynamoDBMockDependencyChecker := NewMockDependencyChecker(ctrl)
+	DynamoDBMockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(nil)
+	NexposeClientMockDependencyChecker := NewMockDependencyChecker(ctrl)
+	NexposeClientMockDependencyChecker.EXPECT().CheckDependencies(context.Background()).Return(fmt.Errorf("error"))
+
+	handler := &DependencyCheckHandler{
+		DynamoDBDependencyChecker:      DynamoDBMockDependencyChecker,
+		NexposeClientDependencyChecker: NexposeClientMockDependencyChecker,
 	}
 	err := handler.Handle(context.Background())
 
