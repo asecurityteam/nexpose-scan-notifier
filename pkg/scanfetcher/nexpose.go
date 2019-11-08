@@ -155,7 +155,6 @@ func (n *NexposeClient) CheckDependencies(ctx context.Context) error {
 		return err
 	}
 	defer res.Body.Close()
-	fmt.Println("hello world!")
 	if res.StatusCode != 200 {
 		return fmt.Errorf("Nexpose unexpectedly returned non-200 response code: %d attempting to GET: %s. ", res.StatusCode, u.String())
 	}
