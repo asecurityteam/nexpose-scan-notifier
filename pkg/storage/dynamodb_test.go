@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -148,6 +150,42 @@ func TestDynamoDBTimestampStorage_StoreTimestamp(t *testing.T) {
 				return
 			}
 			require.Nil(t, actual)
+		})
+	}
+}
+
+func TestDynamoDBDependencyCheck(t *testing.T) {
+	tests := []struct {
+		name          string
+		returnedError error
+		expectedErr   bool
+	}{
+		{
+			name:          "success",
+			returnedError: nil,
+			expectedErr:   false,
+		},
+		{
+			name:          "failure",
+			returnedError: errors.New("🐖"),
+			expectedErr:   true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			ctrl := gomock.NewController(tt)
+			mockDB := NewMockDynamoDBAPI(ctrl)
+			mockDB.EXPECT().ListTables(gomock.Any()).Return(nil, test.returnedError)
+
+			dynamoTimestampStorage := &DynamoDBTimestampStorage{
+				db:                mockDB,
+				tableName:         defaultDynamoDBTableName,
+				partitionKeyName:  defaultDynamoDBPartitionKeyName,
+				partitionKeyValue: defaultDynamoDBLastProcessedPartionKey,
+				timestampKeyName:  defaultDynamoDBTimestampKeyName,
+			}
+			err := dynamoTimestampStorage.CheckDependencies(context.Background())
+			assert.Equal(tt, test.expectedErr, err != nil)
 		})
 	}
 }
