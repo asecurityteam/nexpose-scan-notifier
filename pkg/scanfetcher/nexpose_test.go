@@ -13,6 +13,7 @@ import (
 
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -394,6 +395,42 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 				return
 			}
 			require.Nil(t, err)
+		})
+	}
+}
+
+func TestNexposeDependencyCheck(t *testing.T) {
+	tests := []struct {
+		name               string
+		clientReturnStatus int
+		expectedErr        bool
+	}{
+		{
+			name:               "success",
+			clientReturnStatus: http.StatusOK,
+			expectedErr:        false,
+		},
+		{
+			name:               "failure",
+			clientReturnStatus: http.StatusTeapot,
+			expectedErr:        true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			ctrl := gomock.NewController(tt)
+			mockRT := NewMockRoundTripper(ctrl)
+			mockRT.EXPECT().RoundTrip(gomock.Any()).Return(&http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("🐖"))),
+				StatusCode: test.clientReturnStatus,
+			}, nil)
+			clientURL, _ := url.Parse("http://localhost")
+			client := NexposeClient{
+				Client:   &http.Client{Transport: mockRT},
+				Endpoint: clientURL,
+			}
+			err := client.CheckDependencies(context.Background())
+			assert.Equal(tt, test.expectedErr, err != nil)
 		})
 	}
 }

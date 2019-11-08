@@ -52,10 +52,16 @@ func main() {
 		LogFn:            domain.LoggerFromContext,
 		StatFn:           domain.StatFromContext,
 	}
-	handlers := map[string]serverfull.Function{
-		"notification": serverfull.NewFunction(notificationHandler.Handle),
+
+	dependencyCheckHandler := &v1.DependencyCheckHandler{
+		NexposeClientDependencyChecker: nexposeClient,
+		DynamoDBDependencyChecker:      dynamoDBTimestampStorage,
 	}
 
+	handlers := map[string]serverfull.Function{
+		"notification":    serverfull.NewFunction(notificationHandler.Handle),
+		"dependencycheck": serverfull.NewFunction(dependencyCheckHandler.Handle),
+	}
 	fetcher := &serverfull.StaticFetcher{Functions: handlers}
 	if err := serverfull.Start(ctx, source, fetcher); err != nil {
 		panic(err.Error())
