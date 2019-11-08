@@ -80,6 +80,6 @@ func (s *DynamoDBTimestampStorage) StoreTimestamp(ctx context.Context, ts time.T
 
 // CheckDependencies tries to communicate to the DB by trying to retrieve its tables
 func (s *DynamoDBTimestampStorage) CheckDependencies(ctx context.Context) error {
-	_, err := s.db.ListTables(&dynamodb.ListTablesInput{})
+	_, err := s.db.DescribeTable(&dynamodb.DescribeTableInput{TableName: aws.String(s.tableName)})
 	return err
 }

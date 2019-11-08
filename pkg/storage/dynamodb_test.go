@@ -175,7 +175,7 @@ func TestDynamoDBDependencyCheck(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			ctrl := gomock.NewController(tt)
 			mockDB := NewMockDynamoDBAPI(ctrl)
-			mockDB.EXPECT().ListTables(gomock.Any()).Return(nil, test.returnedError)
+			mockDB.EXPECT().DescribeTable(gomock.Any()).Return(nil, test.returnedError)
 
 			dynamoTimestampStorage := &DynamoDBTimestampStorage{
 				db:                mockDB,
