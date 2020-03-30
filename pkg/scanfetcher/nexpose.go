@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asecurityteam/nexpose-scan-notifier/pkg/container"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 )
 
@@ -33,10 +34,11 @@ type page struct {
 }
 
 type resource struct {
-	EndTime string `json:"endTime"`
-	ScanID  int    `json:"id"`
-	SiteID  int    `json:"siteId"`
-	Status  string `json:"status"`
+	EndTime  string `json:"endTime"`
+	ScanID   int    `json:"id"`
+	ScanName string `json:"scanName"`
+	SiteID   int    `json:"siteId"`
+	Status   string `json:"status"`
 }
 
 type nexposeScanResponse struct {
@@ -46,9 +48,10 @@ type nexposeScanResponse struct {
 
 // NexposeClient implements the interfaces to fetch scans from Nexpose
 type NexposeClient struct {
-	Client   *http.Client
-	Endpoint *url.URL
-	PageSize int
+	Client        *http.Client
+	Endpoint      *url.URL
+	PageSize      int
+	ScanBlocklist *container.StringContainer
 }
 
 // FetchScans fetches Nexpose scans, filters out running scans, and returns all completed scans
@@ -63,7 +66,7 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 
 	pages := scanResp.Page.TotalPages
 	for _, resource := range scanResp.Resources {
-		completedScan, err := scanResourceToCompletedScan(resource, ts)
+		completedScan, err := n.scanResourceToCompletedScan(resource, ts)
 		switch err.(type) {
 		case nil:
 			completedScans = append(completedScans, completedScan)
@@ -86,12 +89,14 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 		}
 
 		for _, resource := range scanResp.Resources {
-			completedScan, err := scanResourceToCompletedScan(resource, ts)
+			completedScan, err := n.scanResourceToCompletedScan(resource, ts)
 			switch err.(type) {
 			case nil:
 				completedScans = append(completedScans, completedScan)
 			case scanNotFinishedError:
 				// skip scans without a status of "finished"
+			case scanNameInBlocklistError:
+				//skip scans included by name in the blocklist
 			case outOfRangeError:
 				// since scans are returned in descending order by scan time, return
 				// the list of completed scans after finding the first scan outside
@@ -143,6 +148,54 @@ func (n *NexposeClient) makePagedNexposeScanRequest(page int) (nexposeScanRespon
 	return scanResp, nil
 }
 
+func (n *NexposeClient) scanResourceToCompletedScan(resource resource, start time.Time) (domain.CompletedScan, error) {
+	// skip scans that have not finished
+	if !strings.EqualFold(resource.Status, finishedScanStatus) {
+		return domain.CompletedScan{}, scanNotFinishedError{
+			ScanID:   strconv.Itoa(resource.ScanID),
+			ScanName: resource.ScanName,
+			SiteID:   strconv.Itoa(resource.SiteID),
+			Status:   resource.Status,
+		}
+	}
+
+	// ignore scans included by name in the blocklist
+	if n.ScanBlocklist.Contains(resource.ScanName) {
+		return domain.CompletedScan{}, scanNameInBlocklistError{
+			ScanID:    strconv.Itoa(resource.ScanID),
+			ScanName:  resource.ScanName,
+			SiteID:    strconv.Itoa(resource.SiteID),
+			Blocklist: n.ScanBlocklist,
+		}
+	}
+
+	// extract scan end time from scan resource
+	endTime, err := time.Parse(time.RFC3339Nano, resource.EndTime)
+	if err != nil {
+		return domain.CompletedScan{}, err
+	}
+
+	// scans are fetched sorted by end time in descending order,
+	// so the first scan resource before or equal to the start
+	// time signals that no more scans need to be processed
+	if endTime.Before(start) || endTime.Equal(start) {
+		return domain.CompletedScan{}, outOfRangeError{
+			ScanID:   strconv.Itoa(resource.ScanID),
+			ScanName: resource.ScanName,
+			SiteID:   strconv.Itoa(resource.SiteID),
+			Start:    start,
+			ScanTime: endTime,
+		}
+	}
+
+	return domain.CompletedScan{
+		SiteID:    strconv.Itoa(resource.SiteID),
+		ScanID:    strconv.Itoa(resource.ScanID),
+		ScanName:  resource.ScanName,
+		Timestamp: endTime,
+	}, nil
+}
+
 // CheckDependencies makes a call to the nexpose endppoint "/api/3".
 // Because asset producer endpoints vary user to user, we want to hit an endpoint
 // that is consistent for any Nexpose user
@@ -160,39 +213,4 @@ func (n *NexposeClient) CheckDependencies(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func scanResourceToCompletedScan(resource resource, start time.Time) (domain.CompletedScan, error) {
-	// skip scans that have not finished
-	if !strings.EqualFold(resource.Status, finishedScanStatus) {
-		return domain.CompletedScan{}, scanNotFinishedError{
-			ScanID: strconv.Itoa(resource.ScanID),
-			SiteID: strconv.Itoa(resource.SiteID),
-			Status: resource.Status,
-		}
-	}
-
-	// extract scan end time from scan resource
-	endTime, err := time.Parse(time.RFC3339Nano, resource.EndTime)
-	if err != nil {
-		return domain.CompletedScan{}, err
-	}
-
-	// scans are fetched sorted by end time in descending order,
-	// so the first scan resource before or equal to the start
-	// time signals that no more scans need to be processed
-	if endTime.Before(start) || endTime.Equal(start) {
-		return domain.CompletedScan{}, outOfRangeError{
-			ScanID:   strconv.Itoa(resource.ScanID),
-			SiteID:   strconv.Itoa(resource.SiteID),
-			Start:    start,
-			ScanTime: endTime,
-		}
-	}
-
-	return domain.CompletedScan{
-		SiteID:    strconv.Itoa(resource.SiteID),
-		ScanID:    strconv.Itoa(resource.ScanID),
-		Timestamp: endTime,
-	}, nil
 }
