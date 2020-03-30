@@ -8,6 +8,7 @@ import (
 // CompletedScan represents identifiers for a completed Nexpose scan.
 type CompletedScan struct {
 	ScanID    string
+	ScanName  string
 	SiteID    string
 	Timestamp time.Time
 }

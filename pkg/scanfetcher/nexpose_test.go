@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/asecurityteam/nexpose-scan-notifier/pkg/container"
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					"endTime": "%s",
 					"id": 1001,
+					"scanName": "Good Scan",
 					"siteId": 1,
 					"status": "%s"
 				}
@@ -65,6 +67,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					Timestamp: afterTimestamp,
 					ScanID:    "1001",
+					ScanName:  "Good Scan",
 					SiteID:    "1",
 				},
 			},
@@ -94,6 +97,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					Timestamp: afterTimestamp,
 					ScanID:    "1001",
+					ScanName:  "Good Scan",
 					SiteID:    "1",
 				},
 			},
@@ -188,8 +192,9 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				mockRT.EXPECT().RoundTrip(gomock.Any()).Return(tt.responses[offset], tt.responseErrs[offset])
 			}
 			nexposeClient := &NexposeClient{
-				Client:   &http.Client{Transport: mockRT},
-				Endpoint: endpoint,
+				Client:        &http.Client{Transport: mockRT},
+				Endpoint:      endpoint,
+				ScanBlocklist: &container.StringContainer{"": struct{}{}},
 			}
 			actual, err := nexposeClient.FetchScans(context.Background(), timestamp)
 			require.Equal(t, tt.expected, actual)
@@ -223,6 +228,7 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 					"endTime": "%s",
 					"id": 1001,
 					"siteId": 1,
+					"scanName": "Good Scan",
 					"status": "running"
 				}
 			],
@@ -251,10 +257,11 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 			expected: nexposeScanResponse{
 				Resources: []resource{
 					{
-						EndTime: ts.Format(time.RFC3339Nano),
-						ScanID:  1001,
-						SiteID:  1,
-						Status:  "running",
+						EndTime:  ts.Format(time.RFC3339Nano),
+						ScanID:   1001,
+						SiteID:   1,
+						ScanName: "Good Scan",
+						Status:   "running",
 					},
 				},
 				Page: page{
@@ -300,8 +307,9 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 			mockRT := NewMockRoundTripper(ctrl)
 			mockRT.EXPECT().RoundTrip(gomock.Any()).Return(tt.response, tt.responseErr)
 			nexposeClient := &NexposeClient{
-				Client:   &http.Client{Transport: mockRT},
-				Endpoint: endpoint,
+				Client:        &http.Client{Transport: mockRT},
+				Endpoint:      endpoint,
+				ScanBlocklist: &container.StringContainer{"": struct{}{}},
 			}
 			actual, err := nexposeClient.makePagedNexposeScanRequest(0)
 			require.Equal(t, tt.expected, actual)
@@ -315,6 +323,10 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 }
 
 func TestScanResourceToCompletedScan(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	endpoint, _ := url.Parse("http://localhost")
 	start := time.Date(2019, 05, 24, 00, 00, 00, 00, time.UTC)
 	beforeStart := time.Date(2019, 05, 23, 00, 00, 00, 00, time.UTC)
 	afterStart := time.Date(2019, 05, 25, 00, 00, 00, 00, time.UTC)
@@ -328,14 +340,16 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 		{
 			name: "success",
 			resource: resource{
-				EndTime: afterStart.Format(time.RFC3339Nano),
-				ScanID:  1001,
-				SiteID:  1,
-				Status:  finishedScanStatus,
+				EndTime:  afterStart.Format(time.RFC3339Nano),
+				ScanID:   1001,
+				SiteID:   1,
+				ScanName: "Good Scan",
+				Status:   finishedScanStatus,
 			},
 			expected: domain.CompletedScan{
 				SiteID:    strconv.Itoa(1),
 				ScanID:    strconv.Itoa(1001),
+				ScanName:  "Good Scan",
 				Timestamp: afterStart,
 			},
 			err: nil,
@@ -343,10 +357,11 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 		{
 			name: "scan out of range",
 			resource: resource{
-				EndTime: beforeStart.Format(time.RFC3339Nano),
-				ScanID:  1001,
-				SiteID:  1,
-				Status:  finishedScanStatus,
+				EndTime:  beforeStart.Format(time.RFC3339Nano),
+				ScanID:   1001,
+				ScanName: "Good Scan",
+				SiteID:   1,
+				Status:   finishedScanStatus,
 			},
 			expected: domain.CompletedScan{},
 			err:      outOfRangeError{},
@@ -354,10 +369,11 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 		{
 			name: "scan out of range equal timestamp",
 			resource: resource{
-				EndTime: start.Format(time.RFC3339Nano),
-				ScanID:  1001,
-				SiteID:  1,
-				Status:  finishedScanStatus,
+				EndTime:  start.Format(time.RFC3339Nano),
+				ScanID:   1001,
+				ScanName: "Good Scan",
+				SiteID:   1,
+				Status:   finishedScanStatus,
 			},
 			expected: domain.CompletedScan{},
 			err:      outOfRangeError{},
@@ -365,10 +381,11 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 		{
 			name: "scan not finished",
 			resource: resource{
-				EndTime: afterStart.Format(time.RFC3339Nano),
-				ScanID:  1001,
-				SiteID:  1,
-				Status:  "running",
+				EndTime:  afterStart.Format(time.RFC3339Nano),
+				ScanID:   1001,
+				SiteID:   1,
+				ScanName: "Good Scan",
+				Status:   "running",
 			},
 			expected: domain.CompletedScan{},
 			err:      fmt.Errorf("scan not finished"),
@@ -376,19 +393,38 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 		{
 			name: "end time not parseable",
 			resource: resource{
-				EndTime: "",
-				ScanID:  1001,
-				SiteID:  1,
-				Status:  finishedScanStatus,
+				EndTime:  "",
+				ScanID:   1001,
+				ScanName: "Good Scan",
+				SiteID:   1,
+				Status:   finishedScanStatus,
 			},
 			expected: domain.CompletedScan{},
 			err:      fmt.Errorf("end time not parseable"),
+		},
+		{
+			name: "scan name in blocklist",
+			resource: resource{
+				EndTime:  beforeStart.Format(time.RFC3339Nano),
+				ScanID:   1001,
+				ScanName: "Bad Scan",
+				SiteID:   1,
+				Status:   finishedScanStatus,
+			},
+			expected: domain.CompletedScan{},
+			err:      scanNameInBlocklistError{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := scanResourceToCompletedScan(tt.resource, start)
+			mockRT := NewMockRoundTripper(ctrl)
+			nexposeClient := &NexposeClient{
+				Client:        &http.Client{Transport: mockRT},
+				Endpoint:      endpoint,
+				ScanBlocklist: &container.StringContainer{"Bad Scan": struct{}{}},
+			}
+			actual, err := nexposeClient.scanResourceToCompletedScan(tt.resource, start)
 			require.Equal(t, tt.expected, actual)
 			if tt.err != nil {
 				require.Error(t, err)
