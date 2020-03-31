@@ -72,6 +72,8 @@ func (n *NexposeClient) FetchScans(ctx context.Context, ts time.Time) ([]domain.
 			completedScans = append(completedScans, completedScan)
 		case scanNotFinishedError:
 			// skip scans without a status of "finished"
+		case scanNameInBlocklistError:
+			//skip scans included by name in the blocklist
 		case outOfRangeError:
 			// since scans are returned in descending order by scan time, return
 			// the list of completed scans after finding the first scan outside
