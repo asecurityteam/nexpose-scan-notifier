@@ -33,7 +33,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					"endTime": "%s",
 					"id": 1001,
-					"scanName": "Good Scan",
+					"scanName": "%s",
 					"siteId": 1,
 					"status": "%s"
 				}
@@ -58,7 +58,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 1)))),
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 0, 1)))),
 					StatusCode: http.StatusOK,
 				},
 			},
@@ -67,7 +67,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					Timestamp: afterTimestamp,
 					ScanID:    "1001",
-					ScanName:  "Good Scan",
+					ScanName:  "Allowed Scan",
 					SiteID:    "1",
 				},
 			},
@@ -78,17 +78,17 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						afterTimestamp.Format(time.RFC3339Nano), "running", 0, 3)))),
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", "running", 0, 3)))),
 					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 1, 3)))),
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 1, 3)))),
 					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						beforeTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 2, 3)))),
+						beforeTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 2, 3)))),
 					StatusCode: http.StatusOK,
 				},
 			},
@@ -97,18 +97,91 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 				{
 					Timestamp: afterTimestamp,
 					ScanID:    "1001",
-					ScanName:  "Good Scan",
+					ScanName:  "Allowed Scan",
 					SiteID:    "1",
 				},
 			},
 			expectErr: false,
 		},
 		{
+			name: "success with one blocked scan, one scan after timestamp, one scan before timestamp",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), "Blocked Scan", finishedScanStatus, 0, 3)))),
+					StatusCode: http.StatusOK,
+				},
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 1, 3)))),
+					StatusCode: http.StatusOK,
+				},
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						beforeTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 2, 3)))),
+					StatusCode: http.StatusOK,
+				},
+			},
+			responseErrs: []error{nil, nil, nil},
+			expected: []domain.CompletedScan{
+				{
+					Timestamp: afterTimestamp,
+					ScanID:    "1001",
+					ScanName:  "Allowed Scan",
+					SiteID:    "1",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "success with one scan after timestamp, one blocked timestamp, one scan before timestamp",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 0, 3)))),
+					StatusCode: http.StatusOK,
+				},
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), "Blocked Scan", finishedScanStatus, 1, 3)))),
+					StatusCode: http.StatusOK,
+				},
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						beforeTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 2, 3)))),
+					StatusCode: http.StatusOK,
+				},
+			},
+			responseErrs: []error{nil, nil, nil},
+			expected: []domain.CompletedScan{
+				{
+					Timestamp: afterTimestamp,
+					ScanID:    "1001",
+					ScanName:  "Allowed Scan",
+					SiteID:    "1",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "one blocked scan",
+			responses: []*http.Response{
+				&http.Response{
+					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
+						afterTimestamp.Format(time.RFC3339Nano), "Blocked Scan", finishedScanStatus, 0, 1)))),
+					StatusCode: http.StatusOK,
+				},
+			},
+			responseErrs: []error{nil},
+			expected:     nil,
+			expectErr:    false,
+		},
+		{
 			name: "out of range error for one scan",
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						beforeTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 1)))),
+						beforeTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 0, 1)))),
 					StatusCode: http.StatusOK,
 				},
 			},
@@ -130,7 +203,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 0, 2)))),
 					StatusCode: http.StatusOK,
 				},
 				nil,
@@ -144,7 +217,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						invalidTimestamp, finishedScanStatus, 0, 1)))),
+						invalidTimestamp, "Allowed Scan", finishedScanStatus, 0, 1)))),
 					StatusCode: http.StatusOK,
 				},
 			},
@@ -157,12 +230,12 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			responses: []*http.Response{
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						afterTimestamp.Format(time.RFC3339Nano), finishedScanStatus, 0, 2)))),
+						afterTimestamp.Format(time.RFC3339Nano), "Allowed Scan", finishedScanStatus, 0, 2)))),
 					StatusCode: http.StatusOK,
 				},
 				&http.Response{
 					Body: ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf(testScanResponse,
-						invalidTimestamp, finishedScanStatus, 1, 2)))),
+						invalidTimestamp, "Allowed Scan", finishedScanStatus, 1, 2)))),
 					StatusCode: http.StatusOK,
 				},
 			},
@@ -194,7 +267,7 @@ func TestNexposeClient_FetchScans(t *testing.T) {
 			nexposeClient := &NexposeClient{
 				Client:        &http.Client{Transport: mockRT},
 				Endpoint:      endpoint,
-				ScanBlocklist: &container.StringContainer{"": struct{}{}},
+				ScanBlocklist: &container.StringContainer{"Blocked Scan": struct{}{}},
 			}
 			actual, err := nexposeClient.FetchScans(context.Background(), timestamp)
 			require.Equal(t, tt.expected, actual)
@@ -228,7 +301,7 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 					"endTime": "%s",
 					"id": 1001,
 					"siteId": 1,
-					"scanName": "Good Scan",
+					"scanName": "Allowed Scan",
 					"status": "running"
 				}
 			],
@@ -260,7 +333,7 @@ func TestNexposeClient_makePagedNexposeScanRequest(t *testing.T) {
 						EndTime:  ts.Format(time.RFC3339Nano),
 						ScanID:   1001,
 						SiteID:   1,
-						ScanName: "Good Scan",
+						ScanName: "Allowed Scan",
 						Status:   "running",
 					},
 				},
@@ -343,13 +416,13 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 				EndTime:  afterStart.Format(time.RFC3339Nano),
 				ScanID:   1001,
 				SiteID:   1,
-				ScanName: "Good Scan",
+				ScanName: "Allowed Scan",
 				Status:   finishedScanStatus,
 			},
 			expected: domain.CompletedScan{
 				SiteID:    strconv.Itoa(1),
 				ScanID:    strconv.Itoa(1001),
-				ScanName:  "Good Scan",
+				ScanName:  "Allowed Scan",
 				Timestamp: afterStart,
 			},
 			err: nil,
@@ -359,7 +432,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			resource: resource{
 				EndTime:  beforeStart.Format(time.RFC3339Nano),
 				ScanID:   1001,
-				ScanName: "Good Scan",
+				ScanName: "Allowed Scan",
 				SiteID:   1,
 				Status:   finishedScanStatus,
 			},
@@ -371,7 +444,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			resource: resource{
 				EndTime:  start.Format(time.RFC3339Nano),
 				ScanID:   1001,
-				ScanName: "Good Scan",
+				ScanName: "Allowed Scan",
 				SiteID:   1,
 				Status:   finishedScanStatus,
 			},
@@ -384,7 +457,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 				EndTime:  afterStart.Format(time.RFC3339Nano),
 				ScanID:   1001,
 				SiteID:   1,
-				ScanName: "Good Scan",
+				ScanName: "Allowed Scan",
 				Status:   "running",
 			},
 			expected: domain.CompletedScan{},
@@ -395,7 +468,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			resource: resource{
 				EndTime:  "",
 				ScanID:   1001,
-				ScanName: "Good Scan",
+				ScanName: "Allowed Scan",
 				SiteID:   1,
 				Status:   finishedScanStatus,
 			},
@@ -407,7 +480,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			resource: resource{
 				EndTime:  beforeStart.Format(time.RFC3339Nano),
 				ScanID:   1001,
-				ScanName: "Bad Scan",
+				ScanName: "Blocked Scan",
 				SiteID:   1,
 				Status:   finishedScanStatus,
 			},
@@ -422,7 +495,7 @@ func TestScanResourceToCompletedScan(t *testing.T) {
 			nexposeClient := &NexposeClient{
 				Client:        &http.Client{Transport: mockRT},
 				Endpoint:      endpoint,
-				ScanBlocklist: &container.StringContainer{"Bad Scan": struct{}{}},
+				ScanBlocklist: &container.StringContainer{"Blocked Scan": struct{}{}},
 			}
 			actual, err := nexposeClient.scanResourceToCompletedScan(tt.resource, start)
 			require.Equal(t, tt.expected, actual)
