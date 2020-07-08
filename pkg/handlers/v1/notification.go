@@ -16,8 +16,11 @@ type Output struct {
 
 // scanNotification represents a completed scan event.
 type scanNotification struct {
-	ScanID string `json:"scanID"`
-	SiteID string `json:"siteID"`
+	ScanID    string `json:"scanID"`
+	SiteID    string `json:"siteID"`
+	ScanType  string `json:"scanType"`
+	StartTime string `json:"startTime"`
+	EndTime   string `json:"endTime"`
 }
 
 // NotificationHandler takes a duration and returns a list of completed scans.
@@ -54,7 +57,7 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 
 	// sort scans by earliest time completed
 	sort.SliceStable(scans, func(left, right int) bool {
-		return scans[left].Timestamp.Before(scans[right].Timestamp)
+		return scans[left].EndTime.Before(scans[right].EndTime)
 	})
 
 	scanNotifications := make([]scanNotification, len(scans))
@@ -65,11 +68,11 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 			logger.Error(logs.ProducerFailure{Reason: err.Error()})
 			return Output{}, err
 		}
-		if err := h.TimestampStorer.StoreTimestamp(ctx, scan.Timestamp); err != nil {
+		if err := h.TimestampStorer.StoreTimestamp(ctx, scan.EndTime); err != nil {
 			return Output{}, err
 		}
 		// emit a statistic of the time between a completed scan and the scan is produced
-		stater.Timing("scannotificationdelay", time.Since(scan.Timestamp))
+		stater.Timing("scannotificationdelay", time.Since(scan.EndTime))
 		scanNotifications[offset] = completedScanToScanNotification(scan)
 	}
 	return Output{Response: scanNotifications}, nil
@@ -77,7 +80,10 @@ func (h *NotificationHandler) Handle(ctx context.Context) (Output, error) {
 
 func completedScanToScanNotification(scan domain.CompletedScan) scanNotification {
 	return scanNotification{
-		ScanID: scan.ScanID,
-		SiteID: scan.SiteID,
+		ScanID:    scan.ScanID,
+		SiteID:    scan.SiteID,
+		ScanType:  scan.ScanType,
+		StartTime: scan.StartTime.Format(time.RFC3339Nano),
+		EndTime:   scan.EndTime.Format(time.RFC3339Nano),
 	}
 }

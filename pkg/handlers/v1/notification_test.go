@@ -15,10 +15,12 @@ import (
 func TestCompletedScanToscanNotification(t *testing.T) {
 	scanID := "1"
 	siteID := "1"
+	now := time.Now()
 	scan := completedScanToScanNotification(domain.CompletedScan{
 		SiteID:    siteID,
 		ScanID:    scanID,
-		Timestamp: time.Now(),
+		EndTime:   now,
+		StartTime: now.Add(time.Second * -10),
 	})
 	require.Equal(t, scanID, scan.ScanID)
 	require.Equal(t, siteID, scan.SiteID)
@@ -50,7 +52,9 @@ func TestHandle(t *testing.T) {
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts.Add(time.Second),
+					EndTime:   ts.Add(time.Second * 10),
 				},
 			},
 			FetchScanErr:       nil,
@@ -59,8 +63,11 @@ func TestHandle(t *testing.T) {
 			Output: Output{
 				Response: []scanNotification{
 					{
-						ScanID: "1",
-						SiteID: "11",
+						ScanID:    "1",
+						SiteID:    "11",
+						ScanType:  "Scheduled",
+						StartTime: ts.Add(time.Second).Format(time.RFC3339Nano),
+						EndTime:   ts.Add(time.Second * 10).Format(time.RFC3339Nano),
 					},
 				},
 			},
@@ -75,7 +82,9 @@ func TestHandle(t *testing.T) {
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts.Add(time.Second),
+					EndTime:   ts.Add(time.Second * 10),
 				},
 			},
 			FetchScanErr:       nil,
@@ -84,8 +93,11 @@ func TestHandle(t *testing.T) {
 			Output: Output{
 				Response: []scanNotification{
 					{
-						ScanID: "1",
-						SiteID: "11",
+						ScanID:    "1",
+						SiteID:    "11",
+						ScanType:  "Scheduled",
+						StartTime: ts.Add(time.Second).Format(time.RFC3339Nano),
+						EndTime:   ts.Add(time.Second * 10).Format(time.RFC3339Nano),
 					},
 				},
 			},
@@ -124,12 +136,14 @@ func TestHandle(t *testing.T) {
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(1 * time.Second),
+					StartTime: ts.Add(1 * time.Second),
+					EndTime:   ts.Add(2 * time.Second),
 				},
 				{
 					ScanID:    "2",
 					SiteID:    "22",
-					Timestamp: ts.Add(2 * time.Second),
+					StartTime: ts.Add(3 * time.Second),
+					EndTime:   ts.Add(4 * time.Second),
 				},
 			},
 			FetchScanErr:       nil,
@@ -147,7 +161,8 @@ func TestHandle(t *testing.T) {
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(1 * time.Second),
+					StartTime: ts.Add(1 * time.Second),
+					EndTime:   ts.Add(2 * time.Second),
 				},
 			},
 			FetchScanErr:       nil,
@@ -210,23 +225,33 @@ func TestHandleSortOrder(t *testing.T) {
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(1 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "2",
 					SiteID:    "22",
-					Timestamp: ts.Add(2 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(2 * time.Second),
 				},
 			},
 			Output: Output{
 				Response: []scanNotification{
 					{
-						ScanID: "1",
-						SiteID: "11",
+						ScanID:    "1",
+						SiteID:    "11",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(1 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "2",
-						SiteID: "22",
+						ScanID:    "2",
+						SiteID:    "22",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(2 * time.Second).Format(time.RFC3339Nano),
 					},
 				},
 			},
@@ -238,41 +263,61 @@ func TestHandleSortOrder(t *testing.T) {
 				{
 					ScanID:    "4",
 					SiteID:    "44",
-					Timestamp: ts.Add(4 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(4 * time.Second),
 				},
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(1 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "3",
 					SiteID:    "33",
-					Timestamp: ts.Add(3 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "2",
 					SiteID:    "22",
-					Timestamp: ts.Add(2 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(2 * time.Second),
 				},
 			},
 			Output: Output{
 				Response: []scanNotification{
 					{
-						ScanID: "1",
-						SiteID: "11",
+						ScanID:    "1",
+						SiteID:    "11",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(1 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "2",
-						SiteID: "22",
+						ScanID:    "2",
+						SiteID:    "22",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(2 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "3",
-						SiteID: "33",
+						ScanID:    "3",
+						SiteID:    "33",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(3 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "4",
-						SiteID: "44",
+						ScanID:    "4",
+						SiteID:    "44",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(4 * time.Second).Format(time.RFC3339Nano),
 					},
 				},
 			},
@@ -284,41 +329,61 @@ func TestHandleSortOrder(t *testing.T) {
 				{
 					ScanID:    "4",
 					SiteID:    "44",
-					Timestamp: ts.Add(3 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "1",
 					SiteID:    "11",
-					Timestamp: ts.Add(1 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(1 * time.Second),
 				},
 				{
 					ScanID:    "3",
 					SiteID:    "33",
-					Timestamp: ts.Add(3 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(3 * time.Second),
 				},
 				{
 					ScanID:    "2",
 					SiteID:    "22",
-					Timestamp: ts.Add(2 * time.Second),
+					ScanType:  "Scheduled",
+					StartTime: ts,
+					EndTime:   ts.Add(2 * time.Second),
 				},
 			},
 			Output: Output{
 				Response: []scanNotification{
 					{
-						ScanID: "1",
-						SiteID: "11",
+						ScanID:    "1",
+						SiteID:    "11",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(1 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "2",
-						SiteID: "22",
+						ScanID:    "2",
+						SiteID:    "22",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(2 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "4",
-						SiteID: "44",
+						ScanID:    "4",
+						SiteID:    "44",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(3 * time.Second).Format(time.RFC3339Nano),
 					},
 					{
-						ScanID: "3",
-						SiteID: "33",
+						ScanID:    "3",
+						SiteID:    "33",
+						ScanType:  "Scheduled",
+						StartTime: ts.Format(time.RFC3339Nano),
+						EndTime:   ts.Add(3 * time.Second).Format(time.RFC3339Nano),
 					},
 				},
 			},
