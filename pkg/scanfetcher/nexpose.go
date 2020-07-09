@@ -34,11 +34,13 @@ type page struct {
 }
 
 type resource struct {
-	EndTime  string `json:"endTime"`
-	ScanID   int    `json:"id"`
-	ScanName string `json:"scanName"`
-	SiteID   int    `json:"siteId"`
-	Status   string `json:"status"`
+	ScanID    int    `json:"id"`
+	SiteID    int    `json:"siteId"`
+	ScanType  string `json:"scanType"`
+	StartTime string `json:"startTime"`
+	EndTime   string `json:"endTime"`
+	ScanName  string `json:"scanName"`
+	Status    string `json:"status"`
 }
 
 type nexposeScanResponse struct {
@@ -190,11 +192,18 @@ func (n *NexposeClient) scanResourceToCompletedScan(resource resource, start tim
 		}
 	}
 
+	// extract scan end time from scan resource
+	startTime, err := time.Parse(time.RFC3339Nano, resource.StartTime)
+	if err != nil {
+		return domain.CompletedScan{}, err
+	}
+
 	return domain.CompletedScan{
 		SiteID:    strconv.Itoa(resource.SiteID),
 		ScanID:    strconv.Itoa(resource.ScanID),
-		ScanName:  resource.ScanName,
-		Timestamp: endTime,
+		ScanType:  resource.ScanType,
+		StartTime: startTime,
+		EndTime:   endTime,
 	}, nil
 }
 

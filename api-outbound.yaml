@@ -289,16 +289,30 @@ components:
       type: object
       description: A single scan element returned from the Nexpose scan API.
       properties:
+        id:
+          type: integer
+          description: The identifier of the scan.
+        scanType:
+          type: string
+          enum:
+            - Agent
+            - Scheduled
+            - Manual
+            - Automated
+        startTime:
+          type: string
+          format: date-time
+          description: The start time of the scan in ISO8601 format.
         endTime:
           type: string
           format: date-time
           description: The end time of the scan in ISO8601 format.
-        id:
-          type: integer
-          description: The identifier of the scan.
         siteId:
           type: integer
-          description: The identifier of the scan site.
+          description: The identifier of the scanned site.
+        scanName:
+          type: string
+          description: Name of the scan.
         status:
           type: string
           description: The scan status.
@@ -324,7 +338,11 @@ components:
     ScanNotification:
       type: object
       required:
+        - scanID
         - siteID
+        - scanType
+        - startTime
+        - endTime
       properties:
         scanID:
           type: string
@@ -332,6 +350,22 @@ components:
         siteID:
           type: string
           description: The Nexpose site ID for the site that just got scanned.
+        scanType:
+          type: string
+          description: The type of scan that just completed.
+          enum:
+            - Agent
+            - Scheduled
+            - Manual
+            - Automated
+        startTime:
+          type: string
+          format: date-time
+          description: The start time of the scan in ISO8601 format.
+        endTime:
+          type: string
+          format: date-time
+          description: The end time of the scan in ISO8601 format.
     Error:
       type: object
       properties:

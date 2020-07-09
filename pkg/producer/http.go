@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/asecurityteam/nexpose-scan-notifier/pkg/domain"
 )
@@ -19,15 +20,21 @@ type HTTP struct {
 }
 
 type scanPayload struct {
-	ScanID string `json:"scanID,omitempty"`
-	SiteID string `json:"siteID,omitempty"`
+	ScanID    string `json:"scanID,omitempty"`
+	SiteID    string `json:"siteID,omitempty"`
+	ScanType  string `json:"scanType,omitempty"`
+	StartTime string `json:"startTime,omitempty"`
+	EndTime   string `json:"endTime,omitempty"`
 }
 
 // Produce sends the completed scan event to an HTTP endpoint
 func (p *HTTP) Produce(ctx context.Context, scan domain.CompletedScan) error {
 	payload := scanPayload{
-		ScanID: scan.ScanID,
-		SiteID: scan.SiteID,
+		ScanID:    scan.ScanID,
+		SiteID:    scan.SiteID,
+		ScanType:  scan.ScanType,
+		StartTime: scan.StartTime.Format(time.RFC3339Nano),
+		EndTime:   scan.StartTime.Format(time.RFC3339Nano),
 	}
 	body, _ := json.Marshal(payload)
 	req, _ := http.NewRequest(http.MethodPost, p.Endpoint.String(), bytes.NewReader(body))
