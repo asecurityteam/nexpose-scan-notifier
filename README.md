@@ -1,3 +1,6 @@
+# We no longer use Nexpose. 
+This repository is not maintained.
+
 <a id="markdown-nexpose-scan-notifier" name="nexpose-scan-notifier"></a>
 # Nexpose Scan Notifier
 [![GoDoc](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier?status.svg)](https://godoc.org/github.com/asecurityteam/nexpose-scan-notifier)
